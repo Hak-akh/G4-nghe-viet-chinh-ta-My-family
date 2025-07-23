@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spelling Practice: My Family</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #81d4fa; /* Light Blue */
+            --secondary-color: #f48fb1; /* Pink */
+            --container-bg: #fffde7; /* Creamy paper */
+            --text-color: #424242; /* Dark Grey */
+            --light-text: #9e9e9e;
+            --success-color: #81c784; /* Soft Green */
+            --error-color: #e57373; /* Soft Red */
+            --border-color: #eeeeee;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Nunito', sans-serif;
+            background-color: #e0f7fa; /* Light cyan background */
+            background-image:
+                linear-gradient(rgba(179, 229, 252, .5) .1em, transparent .1em),
+                linear-gradient(90deg, rgba(179, 229, 252, .5) .1em, transparent .1em);
+            background-size: 3em 3em;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+            overflow-x: hidden;
+            color: var(--text-color);
+        }
+
+        #game-container {
+            text-align: center;
+            background: var(--container-bg);
+            padding: 25px 30px;
+            border-radius: 16px;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 680px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            font-size: clamp(32px, 8vw, 48px);
+            margin-bottom: 10px;
+            color: var(--secondary-color);
+            font-weight: 400;
+        }
+
+        p {
+            font-size: clamp(18px, 4vw, 20px);
+            line-height: 1.6;
+            margin-top: 0;
+        }
+        
+        .instruction-vi {
+            font-size: clamp(16px, 3.5vw, 18px);
+            color: var(--light-text);
+            margin-top: 4px;
+            display: block;
+        }
+
+        input[type="text"] {
+            padding: 14px 20px;
+            font-size: clamp(18px, 4vw, 20px);
+            width: 100%;
+            max-width: 480px;
+            margin: 20px 0;
+            box-sizing: border-box;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            background-color: #ffffff;
+            border: 2px dashed var(--border-color);
+            color: var(--text-color);
+            border-radius: 10px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            text-align: center;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px rgba(129, 212, 250, 0.5);
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: clamp(18px, 4vw, 20px);
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            touch-action: manipulation;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 3px 3px 0px #b3e5fc;
+        }
+
+        button:hover {
+            background-color: #4fc3f7;
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px #b3e5fc;
+        }
+        
+        button:active {
+            transform: translate(1px, 1px);
+            box-shadow: 2px 2px 0px #b3e5fc;
+        }
+
+        #hint {
+            color: var(--light-text);
+            margin-top: 15px;
+            font-size: clamp(16px, 4vw, 18px);
+            user-select: none;
+            line-height: 1.5;
+            min-height: 25px;
+        }
+
+        #completion, #result {
+            font-size: clamp(18px, 4vw, 22px);
+            font-weight: 700;
+            margin-top: 15px;
+            min-height: 28px;
+        }
+        
+        #result.correct { color: var(--success-color); }
+        #result.incorrect { color: var(--error-color); }
+
+        .heart-particle {
+            position: absolute;
+            pointer-events: none;
+            z-index: 10;
+            font-size: 28px;
+            opacity: 0;
+            animation: heart-fly 1.5s ease-out forwards;
+        }
+
+        @keyframes heart-fly {
+            0% {
+                transform: translateY(0) scale(0.5);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-200px) scale(1.5) rotate(var(--r));
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>My Family & Me</h1>
+        <p>Click Start to begin the game!<span class="instruction-vi">Nhấn Bắt đầu để chơi!</span></p>
+        <button onclick="startGame()">Start</button>
+    </div>
+
+    <script>
+        const sentences = [
+            { english: "My name is Nam.", vietnamese: "Tên tôi là Nam." },
+            { english: "I am nine years old.", vietnamese: "Tôi chín tuổi." },
+            { english: "I am a student.", vietnamese: "Tôi là một học sinh." },
+            { english: "My birthday is in June.", vietnamese: "Sinh nhật của tôi vào tháng Sáu." },
+            { english: "I live in Hanoi.", vietnamese: "Tôi sống ở Hà Nội." },
+            { english: "My address is 12 Le Loi Street.", vietnamese: "Địa chỉ của tôi là 12 đường Lê Lợi." },
+            { english: "My phone number is 0123456789.", vietnamese: "Số điện thoại của tôi là 0123456789." },
+            { english: "I am happy today.", vietnamese: "Hôm nay tôi rất vui." },
+            { english: "I am tall and strong.", vietnamese: "Tôi cao và khỏe mạnh." },
+            { english: "I am not sad. I am happy.", vietnamese: "Tôi không buồn. Tôi đang vui." },
+            { english: "I have a small family.", vietnamese: "Tôi có một gia đình nhỏ." },
+            { english: "There are four people in my family.", vietnamese: "Gia đình tôi có bốn người." },
+            { english: "They are my father, my mother, my sister, and me.", vietnamese: "Họ là bố tôi, mẹ tôi, chị gái tôi và tôi." },
+            { english: "This is my father. He is a doctor.", vietnamese: "Đây là bố tôi. Ông ấy là một bác sĩ." },
+            { english: "This is my mother. She is kind and beautiful.", vietnamese: "Đây là mẹ tôi. Bà ấy tốt bụng và xinh đẹp." },
+            { english: "My sister is ten years old.", vietnamese: "Chị gái tôi mười tuổi." },
+            { english: "My grandfather is old.", vietnamese: "Ông tôi đã già." },
+            { english: "My grandmother is very nice.", vietnamese: "Bà tôi rất tốt bụng." },
+            { english: "I love my family very much.", vietnamese: "Tôi yêu gia đình tôi rất nhiều." },
+            { english: "My cousin is funny.", vietnamese: "Anh họ của tôi rất vui tính." },
+            { english: "My uncle is a farmer.", vietnamese: "Chú tôi là một nông dân." },
+            { english: "My aunt is a nurse.", vietnamese: "Dì tôi là một y tá." },
+            { english: "I have a baby brother.", vietnamese: "Tôi có một em trai." },
+            { english: "My family is happy.", vietnamese: "Gia đình tôi hạnh phúc." },
+            { english: "What’s your name?", vietnamese: "Tên bạn là gì?" },
+            { english: "My name is Mai.", vietnamese: "Tên tôi là Mai." },
+            { english: "How old are you?", vietnamese: "Bạn bao nhiêu tuổi?" },
+            { english: "I’m nine years old.", vietnamese: "Tôi chín tuổi." },
+            { english: "Where do you live?", vietnamese: "Bạn sống ở đâu?" },
+            { english: "I live in Ho Chi Minh City.", vietnamese: "Tôi sống ở Thành phố Hồ Chí Minh." },
+            { english: "What’s your address?", vietnamese: "Địa chỉ của bạn là gì?" },
+            { english: "It’s 25 Nguyen Du Street.", vietnamese: "Số 25 đường Nguyễn Du." },
+            { english: "When is your birthday?", vietnamese: "Sinh nhật của bạn khi nào?" },
+            { english: "It’s in September.", vietnamese: "Vào tháng Chín." },
+            { english: "What’s your phone number?", vietnamese: "Số điện thoại của bạn là gì?" },
+            { english: "It’s 0987654321.", vietnamese: "Số 0987654321." },
+            { english: "How many people are there in your family?", vietnamese: "Gia đình bạn có bao nhiêu người?" },
+            { english: "There are five.", vietnamese: "Có năm người." },
+            { english: "Who are they?", vietnamese: "Họ là ai?" },
+            { english: "They are my parents, my brother, my sister, and me.", vietnamese: "Họ là bố mẹ tôi, anh trai, chị gái và tôi." },
+            { english: "Who is he?", vietnamese: "Anh ấy là ai?" },
+            { english: "He is my brother.", vietnamese: "Anh ấy là anh trai tôi." },
+            { english: "Who is she?", vietnamese: "Cô ấy là ai?" },
+            { english: "She is my aunt.", vietnamese: "Cô ấy là dì của tôi." },
+            { english: "Do you love your family? Yes, I do.", vietnamese: "Bạn có yêu gia đình mình không? Vâng, có ạ." },
+            { english: "Is this your grandfather? Yes, it is.", vietnamese: "Đây có phải ông của bạn không? Vâng, đúng vậy." },
+            { english: "What does your father do?", vietnamese: "Bố của bạn làm nghề gì?" },
+            { english: "He is a teacher.", vietnamese: "Ông ấy là một giáo viên." },
+            { english: "What does your mother do?", vietnamese: "Mẹ của bạn làm nghề gì?" },
+            { english: "She is a doctor.", vietnamese: "Bà ấy là một bác sĩ." },
+            { english: "My father is tall and strong.", vietnamese: "Bố tôi cao và khỏe mạnh." },
+            { english: "My mother is short but beautiful.", vietnamese: "Mẹ tôi thấp nhưng xinh đẹp." },
+            { english: "My baby brother is cute.", vietnamese: "Em trai tôi rất dễ thương." },
+            { english: "My sister is smart.", vietnamese: "Chị gái tôi thông minh." },
+            { english: "My grandma has white hair.", vietnamese: "Bà tôi có mái tóc bạc." },
+            { english: "My grandpa likes reading books.", vietnamese: "Ông tôi thích đọc sách." },
+            { english: "My cousin lives in Da Nang.", vietnamese: "Anh họ tôi sống ở Đà Nẵng." },
+            { english: "I live with my parents and my sister.", vietnamese: "Tôi sống với bố mẹ và chị gái." },
+            { english: "My house is near the school.", vietnamese: "Nhà tôi ở gần trường." },
+            { english: "My uncle and aunt are kind.", vietnamese: "Chú và dì của tôi rất tốt bụng." },
+            { english: "We are a happy family.", vietnamese: "Chúng tôi là một gia đình hạnh phúc." },
+            { english: "We often play together on Sundays.", vietnamese: "Chúng tôi thường chơi cùng nhau vào Chủ nhật." }
+        ];
+
+        let currentSentenceIndex = 0;
+        let completedCount = 0;
+        let isPlaying = false;
+        let autoPlayInterval;
+        let wrongAttempts = 0;
+        let isChecking = false;
+        const TOTAL_SENTENCES = sentences.length;
+
+        function createHeartExplosion() {
+            const gameContainer = document.getElementById('game-container');
+            if(!gameContainer) return;
+            const heartEmojis = ['💖', '❤️', '💕', '💗', '💓'];
+
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'heart-particle';
+                particle.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+                
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.setProperty('--r', `${(Math.random() - 0.5) * 720}deg`);
+                
+                gameContainer.appendChild(particle);
+                setTimeout(() => particle.remove(), 1500);
+            }
+        }
+
+        function playSentence() {
+            if (!isPlaying && sentences[currentSentenceIndex]) {
+                isPlaying = true;
+                const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex].english);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                utterance.onend = () => { isPlaying = false; };
+                speechSynthesis.speak(utterance);
+            }
+        }
+        
+        function startAutoPlay() {
+            if (autoPlayInterval) clearInterval(autoPlayInterval);
+            autoPlayInterval = setInterval(() => { if (!isPlaying) playSentence(); }, 5000);
+        }
+
+        function stopAutoPlay() {
+            if (autoPlayInterval) clearInterval(autoPlayInterval);
+        }
+        
+        function normalizeApostrophe(str) {
+            return str.replace(/’|‘/g, "'");
+        }
+
+        function checkAnswer() {
+            if (isChecking) return; 
+
+            const userInput = document.getElementById('userInput').value.trim();
+            const result = document.getElementById('result');
+            const currentSentence = sentences[currentSentenceIndex].english;
+            
+            const normalizedUserInput = normalizeApostrophe(userInput);
+            const normalizedCurrentSentence = normalizeApostrophe(currentSentence);
+
+            const isCorrect = normalizedUserInput === normalizedCurrentSentence;
+
+            if (isCorrect) {
+                isChecking = true; 
+                stopAutoPlay();
+                result.textContent = "Correct!";
+                result.className = 'correct';
+                createHeartExplosion();
+                
+                if (wrongAttempts <= 1) {
+                    completedCount++;
+                }
+                
+                wrongAttempts = 0; 
+                
+                setTimeout(() => {
+                    currentSentenceIndex++;
+                    if (currentSentenceIndex >= TOTAL_SENTENCES) {
+                        document.getElementById('game-container').innerHTML = `<h1>Congratulations! ❤️</h1><p>You scored ${completedCount} out of ${TOTAL_SENTENCES}!</p><button onclick="resetGame()">Play Again</button>`;
+                    } else {
+                         updateGameScreen();
+                         playSentence();
+                         startAutoPlay();
+                    }
+                    isChecking = false; 
+                }, 2000);
+            } else {
+                wrongAttempts++;
+                result.textContent = `Incorrect, try again! (${3 - wrongAttempts} attempts left)`;
+                result.className = 'incorrect';
+                if (wrongAttempts >= 3) {
+                    isChecking = true; 
+                    stopAutoPlay();
+                    wrongAttempts = 0; 
+                    result.textContent = "Moving to the next sentence...";
+                    setTimeout(() => {
+                        currentSentenceIndex++;
+                        if (currentSentenceIndex >= TOTAL_SENTENCES) {
+                            document.getElementById('game-container').innerHTML = `<h1>Game Over!</h1><p>You scored ${completedCount} out of ${TOTAL_SENTENCES}.</p><button onclick="resetGame()">Play Again</button>`;
+                        } else {
+                            updateGameScreen();
+                            playSentence();
+                            startAutoPlay();
+                        }
+                        isChecking = false; 
+                    }, 2000);
+                }
+            }
+        }
+        
+        function updateGameScreen() {
+             if (document.getElementById('userInput')) {
+                document.getElementById('userInput').value = '';
+                document.getElementById('hint').textContent = '';
+                document.getElementById('result').textContent = '';
+                document.getElementById('completion').textContent = `Score: ${completedCount}/${TOTAL_SENTENCES}`;
+             }
+        }
+
+        function showHint() {
+            const hintData = sentences[currentSentenceIndex];
+            document.getElementById('hint').innerHTML = `Hint: ${hintData.english}<br>(${hintData.vietnamese})`;
+        }
+        
+        function clearHint() {
+            const hintEl = document.getElementById('hint');
+            if (hintEl) {
+                hintEl.innerHTML = '';
+            }
+        }
+
+        function startGame() {
+            wrongAttempts = 0;
+            isChecking = false;
+            document.getElementById('game-container').innerHTML = `
+                <h1>My Family & Me</h1>
+                <p>Listen and type what you hear!<span class="instruction-vi">Hãy lắng nghe và gõ lại câu bạn nghe được.</span></p>
+                <input type="text" id="userInput" placeholder="Type the sentence here...">
+                <div class="button-group">
+                    <button onclick="playSentence()">&#9658; Play Sound</button>
+                    <button onclick="checkAnswer()">Check</button>
+                    <button onclick="showHint()">Hint</button>
+                    <button onclick="resetGame()">Reset Game</button>
+                </div>
+                <p id="completion">Score: ${completedCount}/${TOTAL_SENTENCES}</p>
+                <p id="hint"></p>
+                <p id="result"></p>
+            `;
+            document.getElementById('userInput').addEventListener('keypress', handleKeyPress);
+            document.getElementById('userInput').addEventListener('focus', clearHint);
+            document.getElementById('hint').addEventListener('copy', (event) => event.preventDefault());
+
+            playSentence();
+            startAutoPlay();
+        }
+
+        function resetGame() {
+            stopAutoPlay();
+            currentSentenceIndex = 0;
+            completedCount = 0;
+            wrongAttempts = 0;
+            speechSynthesis.cancel();
+            isPlaying = false;
+            isChecking = false;
+            
+            document.getElementById('game-container').innerHTML = `
+                <h1>My Family & Me</h1>
+                <p>Click Start to begin the game!<span class="instruction-vi">Nhấn Bắt đầu để chơi!</span></p>
+                <button onclick="startGame()">Start</button>
+            `;
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                checkAnswer();
+            }
+        }
+    </script>
+</body>
+</html>
