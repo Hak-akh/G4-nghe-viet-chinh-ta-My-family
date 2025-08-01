@@ -401,6 +401,14 @@
             const hintData = sentences[currentSentenceIndex];
             document.getElementById('hint').innerHTML = `Hint: ${hintData.english}`;
         }
+        
+        // NEW: Function to clear the hint
+        function clearHint() {
+            const hintEl = document.getElementById('hint');
+            if (hintEl) {
+                hintEl.innerHTML = '';
+            }
+        }
 
         function startGame() {
             wrongAttempts = 0;
@@ -420,7 +428,11 @@
                 <p id="hint"></p>
                 <p id="result"></p>
             `;
+            // Add event listeners after creating the elements
             document.getElementById('userInput').addEventListener('keypress', handleKeyPress);
+            document.getElementById('userInput').addEventListener('focus', clearHint); // Hides hint on input focus
+            document.getElementById('hint').addEventListener('copy', (event) => event.preventDefault()); // Prevents copying hint
+
             playSentence();
             startAutoPlay();
         }
