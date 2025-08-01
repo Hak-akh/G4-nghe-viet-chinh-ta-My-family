@@ -18,7 +18,6 @@
             --error-color: #e57373; /* Soft Red */
             --border-color: #eeeeee;
         }
-
         body {
             display: flex;
             flex-direction: column;
@@ -36,7 +35,15 @@
             overflow-x: hidden;
             color: var(--text-color);
         }
-
+        #effect-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
         #game-container {
             text-align: center;
             background: var(--container-bg);
@@ -46,10 +53,9 @@
             width: 90%;
             max-width: 680px;
             position: relative;
-            overflow: hidden;
             border: 1px solid var(--border-color);
+            z-index: 1;
         }
-        
         h1 {
             font-family: 'Fredoka One', cursive;
             font-size: clamp(32px, 8vw, 48px);
@@ -57,20 +63,29 @@
             color: var(--secondary-color);
             font-weight: 400;
         }
-
         p {
             font-size: clamp(18px, 4vw, 20px);
             line-height: 1.6;
             margin-top: 0;
+            font-weight: 700; /* Bolder text */
         }
-        
         .instruction-vi {
             font-size: clamp(16px, 3.5vw, 18px);
             color: var(--light-text);
             margin-top: 4px;
             display: block;
+            font-weight: 400; /* Normal weight for contrast */
         }
-
+        #vietnamese-translation {
+            font-size: clamp(18px, 5vw, 22px);
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 20px 0 10px 0;
+            padding: 10px;
+            background-color: #e3f2fd;
+            border-radius: 12px;
+            min-height: 30px;
+        }
         input[type="text"] {
             padding: 14px 20px;
             font-size: clamp(18px, 4vw, 20px);
@@ -87,13 +102,11 @@
             transition: border-color 0.3s, box-shadow 0.3s;
             text-align: center;
         }
-
         input[type="text"]:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 10px rgba(129, 212, 250, 0.5);
         }
-
         .button-group {
             display: flex;
             flex-wrap: wrap;
@@ -101,7 +114,6 @@
             gap: 12px;
             margin-top: 10px;
         }
-
         button {
             padding: 10px 20px;
             font-size: clamp(18px, 4vw, 20px);
@@ -113,21 +125,23 @@
             touch-action: manipulation;
             font-family: 'Nunito', sans-serif;
             font-weight: 700;
-            transition: background-color 0.3s, transform 0.2s;
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
             box-shadow: 3px 3px 0px #b3e5fc;
         }
-
-        button:hover {
+        button:hover:not(:disabled) {
             background-color: #4fc3f7;
             transform: translate(-2px, -2px);
             box-shadow: 5px 5px 0px #b3e5fc;
         }
-        
-        button:active {
+        button:active:not(:disabled) {
             transform: translate(1px, 1px);
             box-shadow: 2px 2px 0px #b3e5fc;
         }
-
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            box-shadow: 3px 3px 0px #bbb;
+        }
         #hint {
             color: var(--light-text);
             margin-top: 15px;
@@ -136,39 +150,21 @@
             line-height: 1.5;
             min-height: 25px;
         }
-
         #completion, #result {
             font-size: clamp(18px, 4vw, 22px);
             font-weight: 700;
             margin-top: 15px;
             min-height: 28px;
         }
-        
         #result.correct { color: var(--success-color); }
         #result.incorrect { color: var(--error-color); }
-
-        .heart-particle {
+        .particle {
             position: absolute;
-            pointer-events: none;
-            z-index: 10;
-            font-size: 28px;
-            opacity: 0;
-            animation: heart-fly 1.5s ease-out forwards;
-        }
-
-        @keyframes heart-fly {
-            0% {
-                transform: translateY(0) scale(0.5);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-200px) scale(1.5) rotate(var(--r));
-                opacity: 0;
-            }
         }
     </style>
 </head>
 <body>
+    <div id="effect-container"></div>
     <div id="game-container">
         <h1>My Family & Me</h1>
         <p>Click Start to begin the game!<span class="instruction-vi">Nhấn Bắt đầu để chơi!</span></p>
@@ -240,32 +236,62 @@
             { english: "We are a happy family.", vietnamese: "Chúng tôi là một gia đình hạnh phúc." },
             { english: "We often play together on Sundays.", vietnamese: "Chúng tôi thường chơi cùng nhau vào Chủ nhật." }
         ];
-
         let currentSentenceIndex = 0;
         let completedCount = 0;
         let isPlaying = false;
         let autoPlayInterval;
         let wrongAttempts = 0;
-        let isChecking = false;
         const TOTAL_SENTENCES = sentences.length;
 
-        function createHeartExplosion() {
-            const gameContainer = document.getElementById('game-container');
-            if(!gameContainer) return;
-            const heartEmojis = ['💖', '❤️', '💕', '💗', '💓'];
+        // Starburst effect
+        function showCelebrationEffect() {
+            const launchWave = (delay) => {
+                setTimeout(() => {
+                    const container = document.getElementById('effect-container');
+                    const particleCount = 60;
+                    const colors = ['#81d4fa', '#f48fb1', '#81c784', '#fffde7', '#FFFFFF'];
 
-            for (let i = 0; i < 30; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'heart-particle';
-                particle.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
-                
-                particle.style.left = `${Math.random() * 100}%`;
-                particle.style.setProperty('--r', `${(Math.random() - 0.5) * 720}deg`);
-                
-                gameContainer.appendChild(particle);
-                setTimeout(() => particle.remove(), 1500);
-            }
+                    for (let i = 0; i < particleCount; i++) {
+                        createParticle(container, colors);
+                    }
+                }, delay);
+            };
+
+            launchWave(0);
+            launchWave(300);
+            launchWave(600);
         }
+
+        function createParticle(container, colors) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            container.appendChild(particle);
+
+            const size = Math.random() * 20 + 8;
+            
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            particle.style.left = '50%';
+            particle.style.top = '50%';
+            particle.style.clipPath = 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)';
+
+            const destinationX = (Math.random() - 0.5) * window.innerWidth;
+            const destinationY = (Math.random() - 0.5) * window.innerHeight;
+            const rotation = Math.random() * 520;
+            const duration = Math.random() * 1000 + 1200;
+
+            const animation = particle.animate([
+                { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                { transform: `translate(calc(-50% + ${destinationX}px), calc(-50% + ${destinationY}px)) scale(0) rotate(${rotation}deg)`, opacity: 0 }
+            ], {
+                duration: duration,
+                easing: 'cubic-bezier(0.1, .9, .57, 1)'
+            });
+
+            animation.onfinish = () => particle.remove();
+        }
+
 
         function playSentence() {
             if (!isPlaying && sentences[currentSentenceIndex]) {
@@ -277,7 +303,7 @@
                 speechSynthesis.speak(utterance);
             }
         }
-        
+
         function startAutoPlay() {
             if (autoPlayInterval) clearInterval(autoPlayInterval);
             autoPlayInterval = setInterval(() => { if (!isPlaying) playSentence(); }, 5000);
@@ -286,55 +312,58 @@
         function stopAutoPlay() {
             if (autoPlayInterval) clearInterval(autoPlayInterval);
         }
-        
-        function normalizeApostrophe(str) {
-            return str.replace(/’|‘/g, "'");
-        }
 
         function checkAnswer() {
-            if (isChecking) return; 
+            const checkBtn = document.getElementById('checkBtn');
+            if (checkBtn.disabled) return;
 
             const userInput = document.getElementById('userInput').value.trim();
             const result = document.getElementById('result');
             const currentSentence = sentences[currentSentenceIndex].english;
-            
-            const normalizedUserInput = normalizeApostrophe(userInput);
-            const normalizedCurrentSentence = normalizeApostrophe(currentSentence);
 
-            const isCorrect = normalizedUserInput === normalizedCurrentSentence;
+            const normalizeApostrophes = (str) => {
+                return str.replace(/[’‘`]/g, "'");
+            };
 
-            if (isCorrect) {
-                isChecking = true; 
+            if (normalizeApostrophes(userInput) === normalizeApostrophes(currentSentence)) {
                 stopAutoPlay();
+                checkBtn.disabled = true;
+                document.getElementById('hintBtn').disabled = true;
+                document.getElementById('playSoundBtn').disabled = true;
+
                 result.textContent = "Correct!";
                 result.className = 'correct';
-                createHeartExplosion();
                 
-                if (wrongAttempts <= 1) {
+                showCelebrationEffect();
+
+                if (wrongAttempts < 2) {
                     completedCount++;
+                    document.getElementById('completion').textContent = `Score: ${completedCount}/${TOTAL_SENTENCES}`;
                 }
                 
-                wrongAttempts = 0; 
+                wrongAttempts = 0;
                 
                 setTimeout(() => {
                     currentSentenceIndex++;
                     if (currentSentenceIndex >= TOTAL_SENTENCES) {
                         document.getElementById('game-container').innerHTML = `<h1>Congratulations! ❤️</h1><p>You scored ${completedCount} out of ${TOTAL_SENTENCES}!</p><button onclick="resetGame()">Play Again</button>`;
                     } else {
-                         updateGameScreen();
-                         playSentence();
-                         startAutoPlay();
+                        updateGameScreen();
+                        playSentence();
+                        startAutoPlay();
                     }
-                    isChecking = false; 
                 }, 2000);
             } else {
                 wrongAttempts++;
-                result.textContent = `Incorrect, try again! (${3 - wrongAttempts} attempts left)`;
+                result.textContent = `Incorrect, try again! (${3 - wrongAttempts} left)`;
                 result.className = 'incorrect';
                 if (wrongAttempts >= 3) {
-                    isChecking = true; 
                     stopAutoPlay();
-                    wrongAttempts = 0; 
+                    checkBtn.disabled = true;
+                    document.getElementById('hintBtn').disabled = true;
+                    document.getElementById('playSoundBtn').disabled = true;
+
+                    wrongAttempts = 0;
                     result.textContent = "Moving to the next sentence...";
                     setTimeout(() => {
                         currentSentenceIndex++;
@@ -345,44 +374,46 @@
                             playSentence();
                             startAutoPlay();
                         }
-                        isChecking = false; 
                     }, 2000);
                 }
             }
         }
-        
+
         function updateGameScreen() {
-             if (document.getElementById('userInput')) {
+            if (document.getElementById('userInput')) {
+                const currentData = sentences[currentSentenceIndex];
                 document.getElementById('userInput').value = '';
+                document.getElementById('vietnamese-translation').textContent = currentData.vietnamese;
                 document.getElementById('hint').textContent = '';
                 document.getElementById('result').textContent = '';
                 document.getElementById('completion').textContent = `Score: ${completedCount}/${TOTAL_SENTENCES}`;
-             }
+                
+                const checkBtn = document.getElementById('checkBtn');
+                if (checkBtn) checkBtn.disabled = false;
+                const hintBtn = document.getElementById('hintBtn');
+                if (hintBtn) hintBtn.disabled = false;
+                const playSoundBtn = document.getElementById('playSoundBtn');
+                if (playSoundBtn) playSoundBtn.disabled = false;
+            }
         }
 
         function showHint() {
             const hintData = sentences[currentSentenceIndex];
-            document.getElementById('hint').innerHTML = `Hint: ${hintData.english}<br>(${hintData.vietnamese})`;
-        }
-        
-        function clearHint() {
-            const hintEl = document.getElementById('hint');
-            if (hintEl) {
-                hintEl.innerHTML = '';
-            }
+            document.getElementById('hint').innerHTML = `Hint: ${hintData.english}`;
         }
 
         function startGame() {
             wrongAttempts = 0;
-            isChecking = false;
+            const currentData = sentences[currentSentenceIndex];
             document.getElementById('game-container').innerHTML = `
                 <h1>My Family & Me</h1>
                 <p>Listen and type what you hear!<span class="instruction-vi">Hãy lắng nghe và gõ lại câu bạn nghe được.</span></p>
+                <p id="vietnamese-translation">${currentData.vietnamese}</p>
                 <input type="text" id="userInput" placeholder="Type the sentence here...">
                 <div class="button-group">
-                    <button onclick="playSentence()">&#9658; Play Sound</button>
-                    <button onclick="checkAnswer()">Check</button>
-                    <button onclick="showHint()">Hint</button>
+                    <button id="playSoundBtn" onclick="playSentence()">&#9658; Play Sound</button>
+                    <button id="checkBtn" onclick="checkAnswer()">Check</button>
+                    <button id="hintBtn" onclick="showHint()">Hint</button>
                     <button onclick="resetGame()">Reset Game</button>
                 </div>
                 <p id="completion">Score: ${completedCount}/${TOTAL_SENTENCES}</p>
@@ -390,9 +421,6 @@
                 <p id="result"></p>
             `;
             document.getElementById('userInput').addEventListener('keypress', handleKeyPress);
-            document.getElementById('userInput').addEventListener('focus', clearHint);
-            document.getElementById('hint').addEventListener('copy', (event) => event.preventDefault());
-
             playSentence();
             startAutoPlay();
         }
@@ -404,17 +432,16 @@
             wrongAttempts = 0;
             speechSynthesis.cancel();
             isPlaying = false;
-            isChecking = false;
-            
             document.getElementById('game-container').innerHTML = `
                 <h1>My Family & Me</h1>
                 <p>Click Start to begin the game!<span class="instruction-vi">Nhấn Bắt đầu để chơi!</span></p>
                 <button onclick="startGame()">Start</button>
             `;
         }
-        
+
         function handleKeyPress(event) {
             if (event.key === 'Enter') {
+                event.preventDefault(); 
                 checkAnswer();
             }
         }
